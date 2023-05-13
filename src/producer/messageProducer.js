@@ -1,6 +1,7 @@
 const createSendMessages = require('./sendMessages')
 const { KafkaJSError, KafkaJSNonRetriableError } = require('../errors')
 const { CONNECTION_STATUS } = require('../network/connectionStatus')
+const { getMergedTopicMessages } = require('./performantMergeTopicMessages')
 
 module.exports = ({
   logger,
@@ -80,17 +81,7 @@ module.exports = ({
     }
 
     validateConnectionStatus()
-    const mergedTopicMessages = topicMessages.reduce((merged, { topic, messages }) => {
-      const index = merged.findIndex(({ topic: mergedTopic }) => topic === mergedTopic)
-
-      if (index === -1) {
-        merged.push({ topic, messages })
-      } else {
-        merged[index].messages = [...merged[index].messages, ...messages]
-      }
-
-      return merged
-    }, [])
+    const mergedTopicMessages = getMergedTopicMessages(topicMessages)
 
     return await sendMessages({
       acks,
