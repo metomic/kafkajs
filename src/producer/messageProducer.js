@@ -58,8 +58,8 @@ module.exports = ({
         `Not requiring ack for all messages invalidates the idempotent producer's EoS guarantees`
       )
     }
-    validateConnectionStatus()
     const mergedTopicMessages = getMergedTopicMessages(topicMessages)
+    validateConnectionStatus()
 
     return await sendMessages({
       acks,

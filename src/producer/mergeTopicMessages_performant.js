@@ -14,15 +14,13 @@ module.exports = {
 
     for (let i = 0; i < topicMessages.length; i++) {
       const tm = topicMessages[i]
-      if (!tm.messages) {
+      if (!tm.topic) {
+        throw new KafkaJSNonRetriableError(`Invalid topic`)
+      } else if (!tm.messages) {
         throw new KafkaJSNonRetriableError(
           `Invalid messages array [${tm.messages}] for topic "${tm.topic}"`
         )
-      }
-      if (groups[tm.topic] === undefined) {
-        if (!tm.topic) {
-          throw new KafkaJSNonRetriableError(`Invalid topic`)
-        }
+      } else if (groups[tm.topic] === undefined) {
         groups[tm.topic] = [tm.messages]
         topicNames.push(tm.topic)
       } else {
@@ -46,7 +44,7 @@ module.exports = {
       for (let j = 0; j < groupLen; j++) {
         for (let k = 0; k < group[j].length; k++) {
           const msg = group[j][k]
-          if (!msg.value) {
+          if (msg.value === undefined) {
             throw new KafkaJSNonRetriableError(
               `Invalid message without value for topic "${topic}": ${JSON.stringify(msg.value)}`
             )
