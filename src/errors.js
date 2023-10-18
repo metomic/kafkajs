@@ -258,8 +258,17 @@ class KafkaJSAggregateError extends Error {
 
 class KafkaJSFetcherRebalanceError extends Error {}
 
+class KafkaJSNoBrokerAvailableError extends KafkaJSError {
+  constructor() {
+    super('No broker available')
+    this.name = 'KafkaJSNoBrokerAvailableError'
+  }
+}
+
 const isRebalancing = e =>
-  e.type === 'REBALANCE_IN_PROGRESS' || e.type === 'NOT_COORDINATOR_FOR_GROUP'
+  e.type === 'REBALANCE_IN_PROGRESS' ||
+  e.type === 'NOT_COORDINATOR_FOR_GROUP' ||
+  e.type === 'ILLEGAL_GENERATION'
 
 const isKafkaJSError = e => e instanceof KafkaJSError
 
@@ -293,6 +302,7 @@ module.exports = {
   KafkaJSCreateTopicError,
   KafkaJSAggregateError,
   KafkaJSFetcherRebalanceError,
+  KafkaJSNoBrokerAvailableError,
   KafkaJSAlterPartitionReassignmentsError,
   isRebalancing,
   isKafkaJSError,
