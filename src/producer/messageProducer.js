@@ -1,6 +1,7 @@
 const createSendMessages = require('./sendMessages')
 const { KafkaJSError, KafkaJSNonRetriableError } = require('../errors')
 const { CONNECTION_STATUS } = require('../network/connectionStatus')
+const { getMergedTopicMessages } = require('./mergeTopicMessages_performant')
 
 module.exports = ({
   logger,
@@ -52,45 +53,13 @@ module.exports = ({
    * @returns {Promise}
    */
   const sendBatch = async ({ acks = -1, timeout, compression, topicMessages = [] }) => {
-    if (topicMessages.some(({ topic }) => !topic)) {
-      throw new KafkaJSNonRetriableError(`Invalid topic`)
-    }
-
     if (idempotent && acks !== -1) {
       throw new KafkaJSNonRetriableError(
         `Not requiring ack for all messages invalidates the idempotent producer's EoS guarantees`
       )
     }
-
-    for (const { topic, messages } of topicMessages) {
-      if (!messages) {
-        throw new KafkaJSNonRetriableError(
-          `Invalid messages array [${messages}] for topic "${topic}"`
-        )
-      }
-
-      const messageWithoutValue = messages.find(message => message.value === undefined)
-      if (messageWithoutValue) {
-        throw new KafkaJSNonRetriableError(
-          `Invalid message without value for topic "${topic}": ${JSON.stringify(
-            messageWithoutValue
-          )}`
-        )
-      }
-    }
-
+    const mergedTopicMessages = getMergedTopicMessages(topicMessages)
     validateConnectionStatus()
-    const mergedTopicMessages = topicMessages.reduce((merged, { topic, messages }) => {
-      const index = merged.findIndex(({ topic: mergedTopic }) => topic === mergedTopic)
-
-      if (index === -1) {
-        merged.push({ topic, messages })
-      } else {
-        merged[index].messages = [...merged[index].messages, ...messages]
-      }
-
-      return merged
-    }, [])
 
     return await sendMessages({
       acks,
